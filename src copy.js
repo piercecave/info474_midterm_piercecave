@@ -34,21 +34,6 @@ const colors = {
 
 }
 
-const LEGENDARY_LEGEND = {
-
-    "All": "All",
-
-    "True": "True",
-
-    "False": "False"
-
-}
-
-var state = {
-    "legendary": "All",
-    "generation": "All"
-}
-
 // Use d3 to process data and call plotting function
 const initializePlot = () => {
     d3.csv("/pokemon.csv", plotData);
@@ -67,15 +52,13 @@ const plotData = (data) => {
 
     const svg = createSVG(width, height, marginLeft, marginRight, marginTop, marginBottom);
 
-    const x = createAndPlotXAxis(svg, data, width, height);
+    const x = createAndPlotXAxis(svg, width, height);
 
-    const y = createAndPlotYAxis(svg, data, height);
+    const y = createAndPlotYAxis(svg, height);
 
-    const tooltip = createTooltip();
+    const pokemonPlot = plotPoints(svg, data, x, y);
 
-    const pokemonPlot = plotPoints(svg, data, x, y, tooltip);
-
-    setFilterListeners(svg, data, pokemonPlot, x, y, tooltip);
+    setFilterListeners(svg, data, pokemonPlot, x, y);
 }
 
 // Uses d3 to create the svg element
@@ -90,10 +73,10 @@ const createSVG = (width, height, marginLeft, marginRight, marginTop, marginBott
 }
 
 // Creates an x scale, appends an axis to our svg element, and labels the axis
-const createAndPlotXAxis = (svg, data, width, height) => {
+const createAndPlotXAxis = (svg, width, height) => {
 
     const x = d3.scaleLinear()
-        .domain([d3.min(data, function (d) { return +d["Sp. Def"] }) * .7, d3.max(data, function (d) { return +d["Sp. Def"] }) * 1.3])
+        .domain([0, 240])
         .range([0, width]);
 
     svg.append("g")
@@ -113,10 +96,10 @@ const createAndPlotXAxis = (svg, data, width, height) => {
 }
 
 // Creates an y scale, appends an axis to our svg element, and labels the axis
-const createAndPlotYAxis = (svg, data, height) => {
+const createAndPlotYAxis = (svg, height) => {
 
     const y = d3.scaleLinear()
-        .domain([d3.min(data, function (d) { return +d["Total"] }) * .7, d3.max(data, function (d) { return +d["Total"] }) * 1.3])
+        .domain([0, 800])
         .range([height, 0]);
 
     svg.append("g")
@@ -133,11 +116,14 @@ const createAndPlotYAxis = (svg, data, height) => {
     return y;
 }
 
-// Creates tooltip
-const createTooltip = () => {
-    const tooltip = d3.select("body")
+// Plots all points
+const plotPoints = (svg, data, x, y) => {
+
+    // Add a tooltip div. Here I define the general feature of the tooltip: stuff that do not depend on the data point.
+    // Its opacity is set to 0: we don't see it by default.
+    var tooltip = d3.select("body")
         .append("div")
-        .style("opacity", 0)
+        .style("opacity", 1)
         .attr("class", "tooltip")
         .style("background-color", "white")
         .style("border", "solid")
@@ -145,11 +131,27 @@ const createTooltip = () => {
         .style("border-radius", "5px")
         .style("padding", "6px")
 
-    return tooltip;
-}
+    // A function that change this tooltip when the user hover a point.
+    // Its opacity is set to 1: we can now see it. Plus it set the text and position of tooltip depending on the datapoint (d)
+    var mouseover = function (d) {
+        tooltip
+            .style("opacity", 1)
+    }
 
-// Plots all points
-const plotPoints = (svg, data, x, y, tooltip) => {
+    var mousemove = function (d) {
+        tooltip
+            .html("Name: " + d["Name"])
+            .style("left", (d3.mouse(this)[0] + 60) + "px")
+            .style("top", (d3.event.pageY - 30) + "px");
+    }
+
+    // A function that change this tooltip when the leaves a point: just need to set opacity to 0 again
+    var mouseleave = function (d) {
+        tooltip
+            .transition()
+            .duration(200)
+            .style("opacity", 1)
+    }
 
     const pokemonPlot = svg
         .selectAll(".markers")
@@ -160,45 +162,75 @@ const plotPoints = (svg, data, x, y, tooltip) => {
         .attr("cx", function (d) { return x(d["Sp. Def"]); })
         .attr("cy", function (d) { return y(d["Total"]); })
         .attr("r", 3)
-        .style("fill", function (d) { return colors[d["Type 1"]]; })
-        .on("mouseover", (d) => { mouseover(d, tooltip) })
-        .on("mousemove", (d) => { mousemove(d, tooltip) })
-        .on("mouseleave", (d) => { mouseleave(d, tooltip) });
+        .style("fill", "#69b3a2")
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave)
 
     return pokemonPlot;
 }
 
-const setFilterListeners = (svg, data, pokemonPlot, x, y, tooltip) => {
+const setFilterListeners = (svg, data, pokemonPlot, x, y) => {
     document.getElementById("legendaryAll").onclick = (evt) => {
-        state.legendary = "All";
-        update(svg, data, pokemonPlot, x, y, tooltip);
+        updateLegendaryFilter(svg, data, pokemonPlot, x, y, "All");
     }
     document.getElementById("legendaryTrue").onclick = (evt) => {
-        state.legendary = "True";
-        update(svg, data, pokemonPlot, x, y, tooltip);
+        updateLegendaryFilter(svg, data, pokemonPlot, x, y, "True");
     }
     document.getElementById("legendaryFalse").onclick = (evt) => {
-        state.legendary = "False";
-        update(svg, data, pokemonPlot, x, y, tooltip);
-    }
-    document.getElementById("generationSelect").onchange = (evt) => {
-        state.generation = document.getElementById("generationSelect").value;
-        update(svg, data, pokemonPlot, x, y, tooltip);
+        updateLegendaryFilter(svg, data, pokemonPlot, x, y, "False");
     }
 }
 
 // Updates legendary filter based on user input
-const update = (svg, data, pokemonPlot, x, y, tooltip) => {
+const updateLegendaryFilter = (svg, data, pokemonPlot, x, y, legendaryFilter) => {
 
-    var filteredData = data.filter(function (d) { return dataFilterLogic(d) });
+    var filteredData = data.filter(function (d) { return d["Legendary"] === "True" });
 
-    x.domain([d3.min(filteredData, function (d) { return +d["Sp. Def"] }) * .7, d3.max(filteredData, function (d) { return +d["Sp. Def"] }) * 1.3])
+    // Add a tooltip div. Here I define the general feature of the tooltip: stuff that do not depend on the data point.
+    // Its opacity is set to 0: we don't see it by default.
+    var tooltip = d3.select("#scatterPlotContainer")
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "1px")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+
+
+
+    // A function that change this tooltip when the user hover a point.
+    // Its opacity is set to 1: we can now see it. Plus it set the text and position of tooltip depending on the datapoint (d)
+    var mouseover = function (d) {
+        tooltip
+            .style("opacity", 1)
+    }
+
+    var mousemove = function (d) {
+        tooltip
+            .html("Pokemon Name: " + d["Name"])
+            .style("left", (d3.mouse(this)[0] + 90) + "px")
+            .style("top", (d3.mouse(this)[1]) + "px")
+    }
+
+    // A function that change this tooltip when the leaves a point: just need to set opacity to 0 again
+    var mouseleave = function (d) {
+        tooltip
+            .transition()
+            .duration(200)
+            .style("opacity", 0)
+    }
+
+
+    x.domain([d3.min(filteredData, function (d) { return +d["Sp. Def"] }), d3.max(filteredData, function (d) { return +d["Sp. Def"] })]);
 
     svg.selectAll(".myXaxis").transition()
         .duration(3000)
         .call(d3.axisBottom(x));
 
-    y.domain([d3.min(filteredData, function (d) { return +d["Total"] }) * .7, d3.max(filteredData, function (d) { return +d["Total"] }) * 1.3]);
+    y.domain([d3.min(filteredData, function (d) { return +d["Total"] }), d3.max(filteredData, function (d) { return +d["Total"] })]);
 
     svg.selectAll(".myYaxis")
         .transition()
@@ -215,53 +247,19 @@ const update = (svg, data, pokemonPlot, x, y, tooltip) => {
         .attr("cx", function (d) { return x(d["Sp. Def"]); })
         .attr("cy", function (d) { return y(d["Total"]); })
         .attr("r", 3)
-        .style("fill", function (d) { return colors[d["Type 1"]]; })
-        .on("mouseover", (d) => { mouseover(d, tooltip) })
-        .on("mousemove", (d) => { mousemove(d, tooltip) })
-        .on("mouseleave", (d) => { mouseleave(d, tooltip) });
+        .style("fill", "red")
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave);
 
     plot.merge(enter).transition().duration(3000)
-        .style("fill", function (d) { return colors[d["Type 1"]]; })
+        .style("fill", '#ff0000')
         .attr("cx", function (d) { return x(d["Sp. Def"]); })
         .attr("cy", function (d) { return y(d["Total"]); })
 
     plot
         .exit()
         .remove();
-}
-
-const dataFilterLogic = (d) => {
-    var keepData = true;
-
-    if (state.legendary != "All") {
-        keepData = d["Legendary"] === state.legendary;
-    }
-
-    if (state.generation != "All") {
-        if (keepData) {
-            keepData = d["Generation"] === state.generation;
-        }
-    }
-
-    return keepData;
-}
-
-const mouseover = (d, tooltip) => {
-    tooltip
-        .style("opacity", 1)
-}
-
-const mousemove = (d, tooltip) => {
-    tooltip
-        .html(d["Name"] + "<br>" + d["Type 1"] + "<br>" + d["Type 2"])
-        .style("left", (d3.event.pageX + 60) + "px")
-        .style("top", (d3.event.pageY - 30) + "px");
-}
-
-const mouseleave = (d, tooltip) => {
-    tooltip
-        .transition()
-        .style("opacity", 0)
 }
 
 // Launches our main function

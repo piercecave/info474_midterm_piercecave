@@ -3,13 +3,48 @@
 
 <head>
     <meta charset="utf-8">
-    <title>474 Assignment #3</title>
+    <title>474 Midterm</title>
     <script src="https://d3js.org/d3.v4.js"></script>
+    <style>
+        div.tooltip {
+            position: absolute;
+            opacity: 0;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Distribution of TOEFL Scores</h2>
-    <div id="barGraphContainer"></div>
+    <h2>Pokemon: Special Defense vs Total Stats</h2>
+    <table>
+        <tr>
+            <td>
+                <div id="scatterPlotContainer"></div>
+            </td>
+            <td>
+                <h4>Legendary:</h4>
+                <input type="radio" name="legendary" id="legendaryAll" value="All" checked> All<br>
+                <input type="radio" name="legendary" id="legendaryTrue" value="True"> True<br>
+                <input type="radio" name="legendary" id="legendaryFalse" value="False"> False<br>
+                <h4>Generation:</h4>
+                <select id="generationSelect">
+                    <option value="All">All</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </td>
+        </tr>
+    </table>
     <script src="src.js"></script>
 </body>
 
