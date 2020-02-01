@@ -51,7 +51,7 @@ var state = {
 
 // Use d3 to process data and call plotting function
 const initializePlot = () => {
-    d3.csv("./pokemon.csv", plotData);
+    d3.csv("https://piercecave.github.io/info474_midterm_piercecave/pokemon.csv", plotData);
 }
 
 // Creates and displays axes, labels, and histogram
