@@ -8,7 +8,7 @@ const colors = {
 
     "Electric": "#F28E2B",
 
-    "Fairy": "#FFBE&D",
+    "Fairy": "#b19cd9",
 
     "Fighting": "#59A14F",
 
@@ -20,7 +20,7 @@ const colors = {
 
     "Ground": "#86BCB6",
 
-    "Ice": "#86BCB6",
+    "Ice": "#add8e6",
 
     "Normal": "#E15759",
 
@@ -31,16 +31,6 @@ const colors = {
     "Steel": "#BAB0AC",
 
     "Water": "#D37295"
-
-}
-
-const LEGENDARY_LEGEND = {
-
-    "All": "All",
-
-    "True": "True",
-
-    "False": "False"
 
 }
 
@@ -76,6 +66,8 @@ const plotData = (data) => {
     const pokemonPlot = plotPoints(svg, data, x, y, tooltip);
 
     setFilterListeners(svg, data, pokemonPlot, x, y, tooltip);
+
+    createLegend();
 }
 
 // Uses d3 to create the svg element
@@ -87,6 +79,25 @@ const createSVG = (width, height, marginLeft, marginRight, marginTop, marginBott
         .append("g")
         .attr("transform",
             "translate(" + marginLeft + "," + marginTop + ")");
+}
+
+// Creates Type1 Legend
+const createLegend = () => {
+    const ul = document.getElementById("type1Legend");
+    const entries = Object.entries(colors);
+    for (const [type, color] of entries) {
+        var li = document.createElement("li");  
+
+        var colorBox = document.createElement("div");  
+        colorBox.classList.add("color-box");
+        colorBox.style.background = color;
+        li.appendChild(colorBox);
+
+        var textnode = document.createTextNode(type);
+        li.appendChild(textnode);
+
+        ul.appendChild(li);
+    }
 }
 
 // Creates an x scale, appends an axis to our svg element, and labels the axis
